@@ -92,7 +92,7 @@ packer.pack(
     fix_point=True,
     check_stable=True,
     support_surface_ratio=0.75,
-    # binding=[('server','cabint','wash')],
+    binding=[('serverserver','cabint','wash')],
     # binding=['cabint','wash','server'],
     number_of_decimals=0
 )

@@ -10,3 +10,5 @@ setup.py
 venv
 debug.log
 test*
+.idea
+.pytest_cache

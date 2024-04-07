@@ -189,7 +189,7 @@ class Painter:
 
     def setAxesEqual(self, ax):
         """Make axes of 3D plot have equal scale so that spheres appear as spheres,
-        cubes as cubes, etc..  This is one possible solution to Matplotlib's
+        cubes as cubes, etc..  This is one possible figure to Matplotlib's
         ax.set_aspect('equal') and ax.axis('equal') not working for 3D.
 
         Input

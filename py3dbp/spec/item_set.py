@@ -42,12 +42,13 @@ class ItemSet:
         self.updown = updown if typeof == "cube" else False
         self.color = color if color else self.generate_color()
         self.merged_list = []
-        self.items = {}
+        self.items = self.generate_items()
 
     def generate_items(self):
+        items = []
         for i in range(self.quantity):
-            self.items[f'{self.partno}_{i + 1:02d}'] = (Item(
-                partno=f'{self.partno}_{i + 1:02d}',
+           items.append(Item(
+                partno=f'{self.partno}_{i + 1}',
                 name=self.name,
                 WHD=(self.width, self.height, self.depth),
                 weight=self.weight,
@@ -57,6 +58,7 @@ class ItemSet:
                 loadbear=self.loadbear,
                 updown=self.updown
             ))
+        return items
 
     def generate_color(self):
         r = random.randint(0, 255)  # 随机生成红色通道的值

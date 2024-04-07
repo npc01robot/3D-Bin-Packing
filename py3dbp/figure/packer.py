@@ -4,6 +4,7 @@ import numpy as np
 
 from py3dbp.spec.bin import Bin
 from py3dbp.spec.item import Item
+from py3dbp.spec.item_set import ItemSet
 from py3dbp.utils.constants import Axis, DEFAULT_NUMBER_OF_DECIMALS
 
 

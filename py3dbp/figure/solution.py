@@ -1,6 +1,6 @@
 import time
 
-from py3dbp import Bin, Packer
+from py3dbp import Bin, Packer, Painter
 from py3dbp.spec.item_set import ItemSet
 
 
@@ -14,14 +14,15 @@ class Solution:
             fix_point=True,
             check_stable=True,
             support_surface_ratio=0.75,
-            binding:list = []):
+            binding:list = [],
+            painting:bool = False,):
         """
         :param bins: 盒子大小
                bigger_first: 放置
                distribute_items=True，按顺序将物品放入箱子中，如果箱子已满，则剩余物品将继续装入下一个箱子，直到所有箱子装满或所有物品都被打包。 distribute_items=False，比较所有箱子的打包情况，即每个箱子打包所有物品，而不是剩余物品。
                 fix_point 重力问题
                 check_stable 稳定性
-                support_surface_ratio 可支撑的面积大小
+                support_surface_ratio 可支a 撑的面积大小
                 binding： binding = [(orange,apple),(computer,hat,watch)]用来组合打包
         """
         start = time.time()
@@ -62,5 +63,17 @@ class Solution:
                 result[box_name]["resolve"] = False
             else:
                 result[box_name]["resolve"] = True
+            if painting:
+                painter = Painter(box)
+                fig = painter.plotBoxAndItems(
+                    title=box.partno,
+                    alpha=0.2,
+                    write_num=True,
+                    fontsize=10
+                )
         result["exec_time"] = stop - start
+        if painting:
+            fig.show()
+
         return result
+

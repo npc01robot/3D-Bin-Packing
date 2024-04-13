@@ -8,6 +8,26 @@ class Solution:
     def __init__(self,items:list[ItemSet]):
         self.items = items
 
+    def find(self):
+        total_items = 0
+        pack_items = []
+        for item in self.items:
+            pack_items.extend(item.items)
+            total_items += item.quantity
+        self.packer = Packer()
+        self.packer.items = pack_items
+        self.packer.total_items = total_items
+        box = self.packer.find_box()
+        painter = Painter(box)
+        fig = painter.plotBoxAndItems(
+            title=box.partno,
+            alpha=0.2,
+            write_num=True,
+            fontsize=10
+        )
+
+        fig.show()
+        return box
     def pack_verify(self,bins:[Bin],
             bigger_first=True,
             distribute_items=True,

@@ -62,6 +62,27 @@ class Bin:
 
         return set2Decimal(total_weight, self.number_of_decimals)
 
+    def putItemV2(self, item, pivot, axis=None):
+        """Put item in bin by minimizing volume."""
+        item.position = pivot
+        [x, y, z] = [float(pivot[0]), float(pivot[1]), float(pivot[2])]
+
+        rotate = RotationType.ALL if item.updown else RotationType.Notupdown
+        for rotation_idx in range(len(rotate)):
+            item.rotation_type = rotation_idx
+            dimension = item.getDimension()
+            [w, h, d] = dimension
+            for current_item_in_bin in self.items:
+                if intersect(current_item_in_bin, item):
+                    return (-1, -1, -1)
+
+            for i in range(0, 3):
+            # Check dimensions first before checking intersections
+                x = self.checkWidth([x, x + float(w), y, y + float(h), z, z + float(d)])
+                y = self.checkHeight([x, x + float(w), y, y + float(h), z, z + float(d)])
+                z = self.checkDepth([x, x + float(w), y, y + float(h), z, z + float(d)])
+            return (x, y, z)
+
     def putItem(self, item, pivot, axis=None):
         """put item in bin"""
         fit = False
@@ -178,9 +199,10 @@ class Bin:
 
         return fit
 
-    def checkDepth(self, unfix_point):
+    def checkDepth(self, unfix_point,length=0):
         """fix item position z"""
-        z_ = [[0, 0], [float(self.depth), float(self.depth)]]
+        length = float(length) if length else float(self.depth)
+        z_ = [[0, 0], [length, length]]
         for j in self.fit_items:
             # creat x set
             x_bottom = set([i for i in range(int(j[0]), int(j[1]))])
@@ -199,9 +221,10 @@ class Bin:
                 return z_[j][1]
         return unfix_point[4]
 
-    def checkWidth(self, unfix_point):
+    def checkWidth(self, unfix_point,length=0):
         """fix item position x"""
-        x_ = [[0, 0], [float(self.width), float(self.width)]]
+        length = float(length) if length else float(self.width)
+        x_ = [[0, 0], [length, length]]
         for j in self.fit_items:
             # creat z set
             z_bottom = set([i for i in range(int(j[4]), int(j[5]))])
@@ -220,9 +243,10 @@ class Bin:
                 return x_[j][1]
         return unfix_point[0]
 
-    def checkHeight(self, unfix_point):
+    def checkHeight(self, unfix_point,length=0):
         """fix item position y"""
-        y_ = [[0, 0], [float(self.height), float(self.height)]]
+        length = float(length) if length else float(self.width)
+        y_ = [[0, 0], [length, length]]
         for j in self.fit_items:
             # creat x set
             x_bottom = set([i for i in range(int(j[0]), int(j[1]))])

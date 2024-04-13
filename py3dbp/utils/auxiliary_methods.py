@@ -3,6 +3,7 @@ from .constants import Axis
 
 
 def rectIntersect(item1, item2, x, y):
+    # 判断两个物体是否相交
     d1 = item1.getDimension()
     d2 = item2.getDimension()
 
@@ -33,3 +34,9 @@ def set2Decimal(value, number_of_decimals=0):
     number_of_decimals = getLimitNumberOfDecimals(number_of_decimals)
 
     return Decimal(value).quantize(number_of_decimals)
+
+
+def calculate_standard_deviation(dimensions):
+    width, height, depth = dimensions
+    aspect_ratio = max(width, height, depth) / min(width, height, depth)
+    return abs(aspect_ratio - 1)

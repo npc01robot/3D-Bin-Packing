@@ -81,6 +81,8 @@ def calculate_standard_deviation(dimensions):
     return diff
 ```
 
+使用过PSO和GA对算法进行改进，但是效果不佳
+
 ## 详细使用方法：
 ```python
 from py3dbp import Solution

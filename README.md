@@ -460,22 +460,6 @@ fig.show()
 * `distribute_items=True` , put the items into the box in order, if the box is full, the remaining items will continue to be loaded into the next box until all the boxes are full  or all the items are packed.
 * `distribute_items=False`, compare the packaging of all boxes, that is to say, each box packs all items, not the remaining items.
 
-
-## Issue
-* Optimizing using GA or PSO...
-
-
-## Bug
-* Make set of items funcn crash.
-
-
-## History 
-
-* 20230621 Add a rule to check item stability.
-* 20230621 Fix issue : there can only creat one bin.
-* 20230628 Modify `Readme.md`.
-* 20230629 Fix issue : can not write anything on cube.
-
 ## Reference
 
 * [Optimizing three-dimensional bin packing through simulation](https://github.com/jerry800416/3dbinpacking/blob/master/reference/OPTIMIZING%20THREE-DIMENSIONAL%20BIN%20PACKING%20THROUGH%20SIMULATION.pdf)
@@ -485,4 +469,4 @@ fig.show()
 
 ## License
 
-[MIT](https://github.com/jerry800416/3dbinpacking/blob/master/LICENSE)
+[MIT](https://github.com/npc01robot/3dbinbox/blob/main/LICENSE)

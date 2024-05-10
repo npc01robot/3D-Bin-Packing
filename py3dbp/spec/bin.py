@@ -3,13 +3,21 @@ import copy
 import numpy as np
 
 from py3dbp.spec.item import Item
-from py3dbp.utils.auxiliary_methods import set2Decimal, intersect
+from py3dbp.utils.auxiliary_methods import intersect, set2Decimal
 from py3dbp.utils.constants import DEFAULT_NUMBER_OF_DECIMALS, RotationType
 
 
 class Bin:
 
-    def __init__(self, partno, WHD, max_weight, corner=0, put_type=1):
+    def __init__(
+        self,
+        partno,
+        WHD,
+        max_weight,
+        corner=0,
+        put_type=1,
+        number_of_decimals=DEFAULT_NUMBER_OF_DECIMALS,
+    ):
         """ """
         self.partno = partno
         self.width = WHD[0]
@@ -20,7 +28,7 @@ class Bin:
         self.items = []
         self.fit_items = np.array([[0, WHD[0], 0, WHD[1], 0, 0]])
         self.unfitted_items = []
-        self.number_of_decimals = DEFAULT_NUMBER_OF_DECIMALS
+        self.number_of_decimals = number_of_decimals
         self.fix_point = False
         self.check_stable = False
         self.support_surface_ratio = 0
@@ -62,29 +70,112 @@ class Bin:
 
         return set2Decimal(total_weight, self.number_of_decimals)
 
-    def putItemV2(self, item, pivot, axis=None):
-        """Put item in bin by minimizing volume."""
-        item.position = pivot
-        [x, y, z] = [float(pivot[0]), float(pivot[1]), float(pivot[2])]
-
-        rotate = RotationType.ALL if item.updown else RotationType.Notupdown
-        for rotation_idx in range(len(rotate)):
-            item.rotation_type = rotation_idx
-            dimension = item.getDimension()
-            [w, h, d] = dimension
+    def putItemV2(
+        self,
+        item,
+        pivots,
+        max_width: float = float("inf"),
+        max_height: float = float("inf"),
+        max_depth: float = float("inf"),
+    ):
+        fit = False
+        min_volume = float("inf")
+        min_x, min_y, min_z = 0, 0, 0
+        max_side = float("inf")
+        min_width, min_height, min_depth = 0, 0, 0
+        rotation_type = 0
+        # 遍历所有角点
+        for pivot in pivots:
+            all_fit = True
+            item.position = pivot
+            rotate = RotationType.ALL if item.updown else RotationType.Notupdown
+            # 判断是否和现有箱子相交
             for current_item_in_bin in self.items:
                 if intersect(current_item_in_bin, item):
-                    return (-1, -1, -1)
+                    all_fit = False
+                    break
+            if not all_fit:
+                continue
+            # 遍历所有旋转
+            for rotation_idx in range(len(rotate)):
+                [x, y, z] = [float(pivot[0]), float(pivot[1]), float(pivot[2])]
+                item.rotation_type = rotation_idx
+                dimension = item.getDimension()
+                [w, h, d] = dimension
 
-            for i in range(0, 3):
-            # Check dimensions first before checking intersections
-                x = self.checkWidth([x, x + float(w), y, y + float(h), z, z + float(d)])
-                y = self.checkHeight([x, x + float(w), y, y + float(h), z, z + float(d)])
-                z = self.checkDepth([x, x + float(w), y, y + float(h), z, z + float(d)])
-            return (x, y, z)
+                width = max(self.width, pivot[0] + w)
+                height = max(self.height, pivot[1] + h)
+                depth = max(self.depth, pivot[2] + d)
+                # 判断是否超过最大尺寸
+                # 宽高不超过深度（长度）
+                if (
+                    float(width) > max_width
+                    or float(height) > max_height
+                    or float(depth) > max_depth
+                ):
+                    continue
+
+                # 获取坐标
+                y = self.checkHeight(
+                    [x, x + float(w), y, y + float(h), z, z + float(d)], y + float(h)
+                )
+                x = self.checkWidth(
+                    [x, x + float(w), y, y + float(h), z, z + float(d)], x + float(w)
+                )
+                z = self.checkDepth(
+                    [x, x + float(w), y, y + float(h), z, z + float(d)], z + float(d)
+                )
+
+                volume = width * height * depth
+                tmp_side = max(width, height, depth)
+                # 判断是否小于最小体积 长边不超过最大边长
+                if volume < min_volume and tmp_side <= max_side:
+                    # 更新最大值
+                    max_side = tmp_side
+                    min_volume = volume
+                    rotation_type = rotation_idx
+                    min_x, min_y, min_z = x, y, z
+                    min_width, min_height, min_depth = width, height, depth
+                    fit = True
+
+        if not fit:
+            return fit
+
+        item.rotation_type = rotation_type
+        [w, h, d] = item.getDimension()
+        self.width = set2Decimal(min_width, number_of_decimals=self.number_of_decimals)
+        self.height = set2Decimal(
+            min_height, number_of_decimals=self.number_of_decimals
+        )
+        self.depth = set2Decimal(min_depth, number_of_decimals=self.number_of_decimals)
+
+        self.fit_items = np.append(
+            self.fit_items,
+            np.array(
+                [
+                    [
+                        min_x,
+                        min_x + float(w),
+                        min_y,
+                        min_y + float(h),
+                        min_z,
+                        min_z + float(d),
+                    ]
+                ]
+            ),
+            axis=0,
+        )
+
+        item.position = [
+            set2Decimal(min_x, self.number_of_decimals),
+            set2Decimal(min_y, self.number_of_decimals),
+            set2Decimal(min_z, self.number_of_decimals),
+        ]
+        self.items.append(copy.deepcopy(item))
+        return fit
 
     def putItem(self, item, pivot, axis=None):
-        """put item in bin"""
+        """直接往里面放"""
         fit = False
         valid_item_position = item.position
         item.position = pivot
@@ -94,9 +185,9 @@ class Bin:
             dimension = item.getDimension()
             # rotatate
             if (
-                    self.width < pivot[0] + dimension[0]
-                    or self.height < pivot[1] + dimension[1]
-                    or self.depth < pivot[2] + dimension[2]
+                self.width < pivot[0] + dimension[0]
+                or self.height < pivot[1] + dimension[1]
+                or self.depth < pivot[2] + dimension[2]
             ):
                 continue
 
@@ -139,7 +230,7 @@ class Bin:
                     # 2. If there is no support under any vertices of the bottom of the item, then fit = False.
                     if self.check_stable == True:
                         # Cal the surface area of ​​item.
-                        item_area_lower = int(dimension[0] * dimension[1])
+                        item_area_lower = int(dimension[0] * dimension[1]) or 1
                         # Cal the surface area of ​​the underlying support.
                         support_area_upper = 0
                         for i in self.fit_items:
@@ -156,8 +247,8 @@ class Bin:
 
                         # If not , get four vertices of the bottom of the item.
                         if (
-                                support_area_upper / item_area_lower
-                                < self.support_surface_ratio
+                            support_area_upper / item_area_lower
+                            < self.support_surface_ratio
                         ):
                             four_vertices = [
                                 [x, y],
@@ -171,7 +262,7 @@ class Bin:
                                 if z == i[5]:
                                     for jdx, j in enumerate(four_vertices):
                                         if (i[0] <= j[0] <= i[1]) and (
-                                                i[2] <= j[1] <= i[3]
+                                            i[2] <= j[1] <= i[3]
                                         ):
                                             c[jdx] = True
                             if False in c:
@@ -199,7 +290,7 @@ class Bin:
 
         return fit
 
-    def checkDepth(self, unfix_point,length=0):
+    def checkDepth(self, unfix_point, length=0):
         """fix item position z"""
         length = float(length) if length else float(self.depth)
         z_ = [[0, 0], [length, length]]
@@ -221,7 +312,7 @@ class Bin:
                 return z_[j][1]
         return unfix_point[4]
 
-    def checkWidth(self, unfix_point,length=0):
+    def checkWidth(self, unfix_point, length=0):
         """fix item position x"""
         length = float(length) if length else float(self.width)
         x_ = [[0, 0], [length, length]]
@@ -243,7 +334,7 @@ class Bin:
                 return x_[j][1]
         return unfix_point[0]
 
-    def checkHeight(self, unfix_point,length=0):
+    def checkHeight(self, unfix_point, length=0):
         """fix item position y"""
         length = float(length) if length else float(self.width)
         y_ = [[0, 0], [length, length]]
@@ -289,7 +380,6 @@ class Bin:
 
     def putCorner(self, info, item):
         """put coner in bin"""
-        fit = False
         x = set2Decimal(self.width - self.corner)
         y = set2Decimal(self.height - self.corner)
         z = set2Decimal(self.depth - self.corner)

@@ -1,2 +1,2 @@
 from .bin import Bin
-from .item import Item
+from .item_set import ItemSet

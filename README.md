@@ -1,9 +1,230 @@
 3D Bin Packing
 ====
 
-3D Bin Packing improvements based on [this repository](https://github.com/enzoruiz/3dbinpacking). 
+3D Bin Packing improvements based on [this repository](https://github.com/enzoruiz/3dbinpacking).
+
+三维装箱针对原有方法进行改进，原始方法不在赘述，主要改进如下：
+
+1、对项目进行整理，通过Solution 函数可以直接进行装箱，不需要考虑底层算法，直接进行装箱，可以通过参数进行控制，绘图等。
+
+2、新增未知箱子大小，即商品装入箱子的问题，但包材大小无法确定，为此提出一种新的解决方法方便寻找合适的箱子大小，此时可以调用solution find_box方法查看装箱箱子大小，也可以通过枚举，暴力搜等方法。
+
+3、针对每个函数的功能进行详细描述，方便使用。
+
+如：
+```python
+    def find_box(
+        self,
+        max_width: float = float("inf"),
+        max_height: float = float("inf"),
+        max_depth: float = float("inf"),
+        painting: bool = False,
+        number_of_decimals=DEFAULT_NUMBER_OF_DECIMALS,
+    ) -> dict:
+        """
+        max_width: 箱子最大宽度
+        max_height: 箱子最大高度
+        max_depth: 箱子最大深度
+        painting: 是否画图
+        """
+```
+
+```python
+    def pack_verify(
+        self,
+        bins: [Bin],
+        items: List[ItemSet] = None,
+        bigger_first=True,
+        distribute_items=True,
+        fix_point=True,
+        check_stable=True,
+        support_surface_ratio=0,
+        binding: list = [],
+        painting: bool = False,
+    ):
+        """
+        :param  bins: 盒子大小
+                bigger_first: 放置
+                distribute_items=True，按顺序将物品放入箱子中，如果箱子已满，则剩余物品将继续装入下一个箱子，直到所有箱子装满或所有物品都被打包。 distribute_items=False，比较所有箱子的打包情况，即每个箱子打包所有物品，而不是剩余物品。
+                fix_point 重力问题
+                check_stable 稳定性
+                support_surface_ratio 可支撑的面积大小
+                binding： binding = [(orange,apple),(computer,hat,watch)]用来组合打包
+        """
+```
+
+4、 find box 确保箱子形状为 最长边尽量的小，如果需要修改，接近正方体或其他形状，可以修改Bin 类中的 putItemV2 方法。
+```python
+                volume = width * height * depth
+                tmp_side = max(width, height, depth)
+                # 判断是否小于最小体积 长边不超过最大边长
+                if volume < min_volume and tmp_side <= max_side:
+                    # 更新最大值
+                    max_side = tmp_side
+                    min_volume = volume
+                    rotation_type = rotation_idx
+                    min_x, min_y, min_z = x, y, z
+                    min_width, min_height, min_depth = width, height, depth
+                    fit = True
+```
+本次修改提供 utils 方法，可以控制箱子形状
+```python
+def calculate_standard_deviation(dimensions):
+    width, height, depth = dimensions
+    ratios = [depth / width, width / height, height / depth]
+    min_diff = abs(min(ratios) - 1)
+    max_diff = abs(max(ratios) - 1)
+
+    # 计算差值，越接近1表示越接近正方体
+    diff = 1 - (max_diff + min_diff) / 2
+
+    return diff
+```
+
+## 详细使用方法：
+```python
+from py3dbp import Solution
+from py3dbp.spec import ItemSet
+```
+
+
+```python
+from py3dbp.spec import Bin
+# 设置物品或盒子大小
+item_sets = [ItemSet(partno="Part 1",name='Part 1', quantity=10, width=10, height=10, depth=10, weight=10)]
+solution = Solution(item_sets)
+```
+
+
+```python
+# 设置盒子尺寸和最大重量
+box = Bin(partno="box",WHD=(30,30,30),max_weight=1000)
+# 模拟打包
+solution.pack_verify(bins=[box],painting=True)
+```
+
+
+    
+![png](output_2_0.png)
+    
+
+
+
+
+
+    {'box': {'unfitted_items': {},
+      'fitted_items': {'Part 1_1': {'name': 'Part 1',
+        'position': [Decimal('0'), Decimal('0'), Decimal('0')],
+        'width': Decimal('10.00'),
+        'height': Decimal('10.00'),
+        'depth': Decimal('10.00'),
+        'weight': Decimal('10.00')},
+       'Part 1_4': {'name': 'Part 1',
+        'position': [Decimal('0'), Decimal('10'), Decimal('0')],
+        'width': Decimal('10.00'),
+        'height': Decimal('10.00'),
+        'depth': Decimal('10.00'),
+        'weight': Decimal('10.00')},
+       'Part 1_7': {'name': 'Part 1',
+        'position': [Decimal('0'), Decimal('20'), Decimal('0')],
+        'width': Decimal('10.00'),
+        'height': Decimal('10.00'),
+        'depth': Decimal('10.00'),
+        'weight': Decimal('10.00')},
+       'Part 1_10': {'name': 'Part 1',
+        'position': [Decimal('0'), Decimal('0'), Decimal('10')],
+        'width': Decimal('10.00'),
+        'height': Decimal('10.00'),
+        'depth': Decimal('10.00'),
+        'weight': Decimal('10.00')},
+       'Part 1_2': {'name': 'Part 1',
+        'position': [Decimal('10'), Decimal('0'), Decimal('0')],
+        'width': Decimal('10.00'),
+        'height': Decimal('10.00'),
+        'depth': Decimal('10.00'),
+        'weight': Decimal('10.00')},
+       'Part 1_5': {'name': 'Part 1',
+        'position': [Decimal('10'), Decimal('10'), Decimal('0')],
+        'width': Decimal('10.00'),
+        'height': Decimal('10.00'),
+        'depth': Decimal('10.00'),
+        'weight': Decimal('10.00')},
+       'Part 1_8': {'name': 'Part 1',
+        'position': [Decimal('10'), Decimal('20'), Decimal('0')],
+        'width': Decimal('10.00'),
+        'height': Decimal('10.00'),
+        'depth': Decimal('10.00'),
+        'weight': Decimal('10.00')},
+       'Part 1_3': {'name': 'Part 1',
+        'position': [Decimal('20'), Decimal('0'), Decimal('0')],
+        'width': Decimal('10.00'),
+        'height': Decimal('10.00'),
+        'depth': Decimal('10.00'),
+        'weight': Decimal('10.00')},
+       'Part 1_6': {'name': 'Part 1',
+        'position': [Decimal('20'), Decimal('10'), Decimal('0')],
+        'width': Decimal('10.00'),
+        'height': Decimal('10.00'),
+        'depth': Decimal('10.00'),
+        'weight': Decimal('10.00')},
+       'Part 1_9': {'name': 'Part 1',
+        'position': [Decimal('20'), Decimal('20'), Decimal('0')],
+        'width': Decimal('10.00'),
+        'height': Decimal('10.00'),
+        'depth': Decimal('10.00'),
+        'weight': Decimal('10.00')}},
+      'width': Decimal('30.00'),
+      'height': Decimal('30.00'),
+      'depth': Decimal('30.00'),
+      'weight': Decimal('1000.00'),
+      'resolve': True}}
+
+
+
+
+```python
+# 未知盒子求解决
+solution.find_box(painting=True)
+```
+
+
+    
+![png](output_3_0.png)
+    
+
+
+
+
+
+    {'status': True, 'box': <py3dbp.spec.bin.Bin at 0x187bef12110>}
+
+
+
+
+```python
+# 暴力求解
+solution.find_box_by_enum()
+# 最小边长暴力求解
+solution.find_box_by_min_side()
+# 因式分解求解
+solution.find_box_by_factorization()
+```
+
+
+
+
+    (Decimal('25.00'), Decimal('25.00'), Decimal('16.00'))
+
+
+
+
+```python
+
+```
 
 <img src="https://github.com/jerry800416/3dbinpacking/blob/master/img/3.jpeg" width="600"/>
+
+以下为原始example，供参考。
 
 ## OutLine
 - [3D Bin Packing](#3d-bin-packing)

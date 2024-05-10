@@ -1,1 +1,0 @@
-from .painter import Painter

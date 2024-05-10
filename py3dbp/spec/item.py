@@ -1,11 +1,15 @@
 from py3dbp.utils.auxiliary_methods import set2Decimal
-from py3dbp.utils.constants import DEFAULT_NUMBER_OF_DECIMALS, START_POSITION, RotationType
+from py3dbp.utils.constants import (
+    DEFAULT_NUMBER_OF_DECIMALS,
+    START_POSITION,
+    RotationType,
+)
 
 
 class Item:
 
     def __init__(
-            self, partno, name, typeof, WHD, weight, level, loadbear, updown, color
+        self, partno, name, typeof, WHD, weight, level, loadbear, updown, color
     ):
         """ """
         self.partno = partno

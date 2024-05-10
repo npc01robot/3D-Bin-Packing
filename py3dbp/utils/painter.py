@@ -1,7 +1,7 @@
-import numpy as np
-from matplotlib.patches import Rectangle, Circle
 import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d.art3d as art3d
+import numpy as np
+from matplotlib.patches import Circle, Rectangle
 
 
 class Painter:
@@ -14,20 +14,20 @@ class Painter:
         self.depth = bins.depth
 
     def _plotCube(
-            self,
-            ax,
-            x,
-            y,
-            z,
-            dx,
-            dy,
-            dz,
-            color="red",
-            mode=2,
-            linewidth=1,
-            text="",
-            fontsize=15,
-            alpha=0.5,
+        self,
+        ax,
+        x,
+        y,
+        z,
+        dx,
+        dy,
+        dz,
+        color="red",
+        mode=2,
+        linewidth=1,
+        text="",
+        fontsize=15,
+        alpha=0.5,
     ):
         """Auxiliary function to plot a cube. code taken somewhere from the web."""
         xx = [x, x, x + dx, x + dx, x]
@@ -75,19 +75,19 @@ class Painter:
             art3d.pathpatch_2d_to_3d(p6, z=y + dy, zdir="y")
 
     def _plotCylinder(
-            self,
-            ax,
-            x,
-            y,
-            z,
-            dx,
-            dy,
-            dz,
-            color="red",
-            mode=2,
-            text="",
-            fontsize=10,
-            alpha=0.2,
+        self,
+        ax,
+        x,
+        y,
+        z,
+        dx,
+        dy,
+        dz,
+        color="red",
+        mode=2,
+        text="",
+        fontsize=10,
+        alpha=0.2,
     ):
         """Auxiliary function to plot a Cylinder"""
         # plot the two circles above and below the cylinder

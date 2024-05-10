@@ -1,8 +1,6 @@
 import random
 
-from py3dbp import Item
-from py3dbp.utils.auxiliary_methods import set2Decimal
-from py3dbp.utils.constants import DEFAULT_NUMBER_OF_DECIMALS
+from py3dbp.spec.item import Item
 
 
 class ItemSet:
@@ -11,9 +9,19 @@ class ItemSet:
     """
 
     def __init__(
-            self, partno: str, name: str, width: float, height: float, depth: float, weight: float, color: str = "",
-            quantity: int = 1,
-            typeof: str = "cube", level: int = 1, loadbear: float = 99, updown: bool = True,
+        self,
+        partno: str,
+        name: str,
+        width: float,
+        height: float,
+        depth: float,
+        weight: float,
+        color: str = "",
+        quantity: int = 1,
+        typeof: str = "cube",
+        level: int = 1,
+        loadbear: float = 99,
+        updown: bool = True,
     ):
         """
         partno: str, 唯一标识符前缀
@@ -41,30 +49,32 @@ class ItemSet:
         self.loadbear = loadbear
         self.updown = updown if typeof == "cube" else False
         self.color = color if color else self.generate_color()
-        self.merged_list = []
+        self.child = None
         self.items = self.generate_items()
 
     def generate_items(self):
         items = []
         for i in range(self.quantity):
-           items.append(Item(
-                partno=f'{self.partno}_{i + 1}',
-                name=self.name,
-                WHD=(self.width, self.height, self.depth),
-                weight=self.weight,
-                color=self.color,
-                typeof=self.typeof,
-                level=self.level,
-                loadbear=self.loadbear,
-                updown=self.updown
-            ))
+            items.append(
+                Item(
+                    partno=f"{self.partno}_{i + 1}",
+                    name=self.name,
+                    WHD=(self.width, self.height, self.depth),
+                    weight=self.weight,
+                    color=self.color,
+                    typeof=self.typeof,
+                    level=self.level,
+                    loadbear=self.loadbear,
+                    updown=self.updown,
+                )
+            )
         return items
 
     def generate_color(self):
         r = random.randint(0, 255)  # 随机生成红色通道的值
         g = random.randint(0, 255)  # 随机生成绿色通道的值
         b = random.randint(0, 255)  # 随机生成蓝色通道的值
-        color_code = f'#{r:02x}{g:02x}{b:02x}'  # 将RGB值转换为颜色代码格式
+        color_code = f"#{r:02x}{g:02x}{b:02x}"  # 将RGB值转换为颜色代码格式
         return color_code
 
     def get_max_side(self):

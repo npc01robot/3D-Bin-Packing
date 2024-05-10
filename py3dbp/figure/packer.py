@@ -4,9 +4,10 @@ import numpy as np
 
 from py3dbp.spec.bin import Bin
 from py3dbp.spec.item import Item
-from py3dbp.spec.item_set import ItemSet
-from py3dbp.utils.auxiliary_methods import set2Decimal, calculate_standard_deviation, intersect
-from py3dbp.utils.constants import Axis, DEFAULT_NUMBER_OF_DECIMALS, RotationType
+from py3dbp.utils.constants import (
+    DEFAULT_NUMBER_OF_DECIMALS,
+    Axis,
+)
 
 
 class Packer:
@@ -30,82 +31,36 @@ class Packer:
 
         return self.items.append(item)
 
-    def packBin(self,item:Item, bin:Bin, fix_point, check_stable, support_surface_ratio):
+    def packBin(self, item: Item, bin: Bin, max_width, max_height, max_depth):
         """ """
-        bin.fix_point = fix_point
-        bin.check_stable = check_stable
-        bin.support_surface_ratio = support_surface_ratio
-        min_volume = float("inf")
-        min_x, min_y, min_z = 0, 0, 0
-        aspect_ratio_difference = 1
-        rotation_type = 0
-        min_width, min_height, min_depth = 0, 0, 0
+        bin.fix_point = True
+        bin.check_stable = True
+        bin.support_surface_ratio = 0
         if not bin.items:
-            x, y, z = 0,0,0
-            width, height, depth = item.getDimension()
-            bin.width = width
-            bin.height = height
-            bin.depth = depth
-            bin.fit_items = np.array([[0,width, 0, height, 0, 0]])
-            item.rotation_type = 0
-            item.position = [set2Decimal(x), set2Decimal(y), set2Decimal(z)]
-            bin.items.append(copy.deepcopy(item))
-            return
+            return bin.putItemV2(
+                item,
+                [item.position],
+            )
         # 正轴方向摆放
-        for axis in range(0, 3):
-            items_in_bin = bin.items
-            for ib in items_in_bin:
-                pivot = [0, 0, 0]
-                w, h, d = ib.getDimension()
-                # 摆放位置
-                if axis == Axis.WIDTH:
-                    pivot = [ib.position[0] + w, ib.position[1], ib.position[2]]
-                elif axis == Axis.HEIGHT:
-                    pivot = [ib.position[0], ib.position[1] + h, ib.position[2]]
-                elif axis == Axis.DEPTH:
-                    pivot = [ib.position[0], ib.position[1], ib.position[2] + d]
-                x, y, z = bin.putItemV2(item, pivot, axis)
-                if x == -1:
-                    continue
-                # 物体旋转摆放
-                rotate = RotationType.ALL if item.updown == True else RotationType.Notupdown
-                for i in range(0, len(rotate)):
-                    item.rotation_type = i
-                    item.position = pivot
+        items_in_bin = bin.items
+        pivots = set()
+        # 获取所有item的可放置位置
+        for ib in items_in_bin:
+            w, h, d = ib.getDimension()
+            for axis in range(3):
+                pivot = list(ib.position)  # 创建pivot的副本
+                pivot[axis] += [w, h, d][axis]  # 根据不同轴更新pivot的位置
+                pivots.add(tuple(pivot))  # 将pivot位置加入集合
 
-                    item_width, item_height, item_depth = item.getDimension()
-                    width = max(bin.width, pivot[0] + item_width)
-                    height = max(bin.height, pivot[1] + item_height)
-                    depth = max(bin.depth, pivot[2] + item_depth)
+        # 移除items_in_bin中已存在的位置
+        pivots.difference_update({tuple(ib.position) for ib in items_in_bin})
+        pivots = [list(p) for p in pivots]  # 将集合转换为列表，保持原有数据结构
+        fit = bin.putItemV2(item, pivots, max_width, max_height, max_depth)
+        return fit
 
-                    # 只在必要时计算体积和体积比率
-                    volume = width * height * depth
-                    if volume < min_volume:
-                        new_aspect_ratio = calculate_standard_deviation([width, height, depth])
-                        if new_aspect_ratio < aspect_ratio_difference:
-                            # 更新最小值
-                            min_volume = volume
-                            aspect_ratio_difference = new_aspect_ratio
-                            rotation_type = i
-                            min_x, min_y, min_z = x,y,z
-                            min_width, min_height, min_depth = width, height, depth
-
-        item.rotation_type = rotation_type
-        w, h, d = item.getDimension()
-        bin.width = min_width
-        bin.height = min_height
-        bin.depth = min_depth
-        print(bin.width, bin.height, bin.depth)
-
-        bin.fit_items = np.append(
-            bin.fit_items,
-            np.array([[min_x, min_x + float(w), min_y, min_y + float(h), min_z, min_z + float(d)]]),
-            axis=0,
-        )
-        item.position = [set2Decimal(min_x), set2Decimal(min_y), set2Decimal(min_z)]
-        bin.items.append(copy.deepcopy(item))
-
-    def pack2Bin(self, bin:Bin, item:Item, fix_point, check_stable, support_surface_ratio):
+    def pack2Bin(
+        self, bin: Bin, item: Item, fix_point, check_stable, support_surface_ratio
+    ):
         """pack item to bin"""
         fitted = False
         bin.fix_point = fix_point
@@ -239,9 +194,9 @@ class Packer:
                     break
                 # include x and !include y
                 elif (
-                        x_set.issubset(area[j][0]) == True
-                        and y_set.issubset(area[j][1]) == False
-                        and len(y_set & area[j][1]) != 0
+                    x_set.issubset(area[j][0]) == True
+                    and y_set.issubset(area[j][1]) == False
+                    and len(y_set & area[j][1]) != 0
                 ):
                     y = len(y_set & area[j][1]) / (y_ed - y_st) * int(i.weight)
                     area[j][2] += y
@@ -252,9 +207,9 @@ class Packer:
                     break
                 # include y and !include x
                 elif (
-                        x_set.issubset(area[j][0]) == False
-                        and y_set.issubset(area[j][1]) == True
-                        and len(x_set & area[j][0]) != 0
+                    x_set.issubset(area[j][0]) == False
+                    and y_set.issubset(area[j][1]) == True
+                    and len(x_set & area[j][0]) != 0
                 ):
                     x = len(x_set & area[j][0]) / (x_ed - x_st) * int(i.weight)
                     area[j][2] += x
@@ -265,10 +220,10 @@ class Packer:
                     break
                 # !include x and !include y
                 elif (
-                        x_set.issubset(area[j][0]) == False
-                        and y_set.issubset(area[j][1]) == False
-                        and len(y_set & area[j][1]) != 0
-                        and len(x_set & area[j][0]) != 0
+                    x_set.issubset(area[j][0]) == False
+                    and y_set.issubset(area[j][1]) == False
+                    and len(y_set & area[j][1]) != 0
+                    and len(x_set & area[j][0]) != 0
                 ):
                     all = (y_ed - y_st) * (x_ed - x_st)
                     y = len(y_set & area[0][1])
@@ -287,9 +242,13 @@ class Packer:
             result.append(round(i / sum(r) * 100, 2))
         return result
 
-    def find_box(self,
-                 number_of_decimals=DEFAULT_NUMBER_OF_DECIMALS,
-                 ):
+    def find_box(
+        self,
+        max_height,
+        max_weight,
+        max_length,
+        number_of_decimals=DEFAULT_NUMBER_OF_DECIMALS,
+    ) -> dict:
 
         for item in self.items:
             item.formatNumbers(number_of_decimals)
@@ -298,20 +257,29 @@ class Packer:
         # self.items.sort(key=lambda item: item.getMaxArea(), reverse=bigger_first)
         self.items.sort(key=lambda item: item.loadbear, reverse=True)
         self.items.sort(key=lambda item: item.level, reverse=False)
-        box = Bin("box",(0,0,0),max_weight=99999,put_type=0)
+        box = Bin(
+            "box",
+            (0, 0, 0),
+            max_weight=99999,
+            put_type=0,
+            number_of_decimals=number_of_decimals,
+        )
         for item in self.items:
-            self.packBin(item, box,True,True,0.75)
-        return box
+            fit = self.packBin(item, box, max_height, max_weight, max_length)
+            if not fit:
+                return {"status": False, "item": item, "box": box}
+        return {"status": True, "box": box}
 
     def pack(
-            self,
-            bigger_first=False,
-            distribute_items=True,
-            fix_point=True,
-            check_stable=True,
-            support_surface_ratio=0.75,
-            binding=[],
-            number_of_decimals=DEFAULT_NUMBER_OF_DECIMALS,
+        self,
+        bigger_first=False,
+        distribute_items=True,
+        fix_point=True,
+        check_stable=True,
+        gravity=False,
+        support_surface_ratio=0.75,
+        binding=[],
+        number_of_decimals=DEFAULT_NUMBER_OF_DECIMALS,
     ):
         """pack master func"""
         # set decimals
@@ -354,7 +322,8 @@ class Packer:
                     )
 
             # Deviation Of Cargo Gravity Center
-            self.bins[idx].gravity = self.gravityCenter(bin)
+            if gravity:
+                self.bins[idx].gravity = self.gravityCenter(bin)
 
             if distribute_items:
                 for bitem in bin.items:
@@ -373,4 +342,3 @@ class Packer:
         # for item in self.items.copy():
         #     if item in bin.unfitted_items:
         #         self.items.remove(item)
-

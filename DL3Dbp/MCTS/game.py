@@ -7,63 +7,52 @@ class Game:
 
     def render(self) -> None:
         """
-        RETURNS:
-            Visual representation of the current state of the game which is to be output as text or other means
+        将以文本或其他方式输出游戏当前状态的视觉表现
         """
         raise NotImplementedError
 
     def get_state(self) -> Any:
         """
-        RETURNS:
-            Current state of the game
+        当前状态
         """
         raise NotImplementedError
 
     def number_of_players(self) -> int:
         """
-        RETURNS:
-            Number of players
+        玩家个数
         """
         raise NotImplementedError
 
     def current_player(self) -> int:
         """
-        Note that players are labelled from 0 to number of players - 1
-
-        RETURNS:
-            Player that is taking an action this turn
+        本回合采取行动的玩家编号
         """
         raise NotImplementedError
 
     def possible_actions(self) -> List[int]:
         """
-        RETURNS:
-            Possible actions that can be taken by current player this turn
+        当前玩家本回合可以采取的可能行动列表
         """
         raise NotImplementedError
 
     def take_action(self, action: int) -> None:
         """
-        Note that next player should be chosen even after end of game
+        下一个玩家应该在游戏结束后选择
         """
         raise NotImplementedError
 
     def has_outcome(self) -> bool:
         """
-        RETURNS:
-            True if game has ended
-            OR
-            False if game is still ongoing
+        游戏是否结束
         """
         raise NotImplementedError
 
     def winner(self) -> List[int]:
         """
-        RETURNS:
-            Empty list if all players lose
-            OR
-            List of players if game ends in a draw
-            OR
-            List of winners if at least 1 player wins
+        如果所有玩家都输了，则清空列表
+        或
+        如果游戏以平局结束，则列出玩家名单
+        或
+        如果至少有一名玩家获胜，则列出获胜者名单
         """
         raise NotImplementedError

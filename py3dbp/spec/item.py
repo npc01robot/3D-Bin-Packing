@@ -1,5 +1,5 @@
-from py3dbp.utils.auxiliary_methods import set2Decimal
-from py3dbp.utils.constants import (
+from utils.auxiliary_methods import set2Decimal
+from utils.constants import (
     DEFAULT_NUMBER_OF_DECIMALS,
     START_POSITION,
     RotationType,

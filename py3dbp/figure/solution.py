@@ -4,8 +4,8 @@ from typing import List
 
 from py3dbp.figure.packer import Packer
 from py3dbp.spec import Bin, ItemSet
-from py3dbp.utils.constants import DEFAULT_NUMBER_OF_DECIMALS
-from py3dbp.utils.merge_item import MergeItemTool
+from utils.constants import DEFAULT_NUMBER_OF_DECIMALS
+from utils.merge_item import MergeItemTool
 
 
 class Solution:

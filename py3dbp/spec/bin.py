@@ -3,8 +3,8 @@ import copy
 import numpy as np
 
 from py3dbp.spec.item import Item
-from py3dbp.utils.auxiliary_methods import intersect, set2Decimal
-from py3dbp.utils.constants import DEFAULT_NUMBER_OF_DECIMALS, RotationType
+from utils.auxiliary_methods import intersect, set2Decimal
+from utils.constants import DEFAULT_NUMBER_OF_DECIMALS, RotationType
 
 
 class Bin:

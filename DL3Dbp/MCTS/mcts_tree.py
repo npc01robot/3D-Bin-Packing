@@ -12,13 +12,14 @@ from DL3Dbp.MCTS.mcts import MCTS
 
 
 class MCTSTree(MCTS):
-    def __init__(self, game: Game, allow_transpositions: bool = True, training: bool = True,item_node: Optional[ItemNode] = None):
+    def __init__(self, game: Game, allow_transpositions: bool = True, training: bool = True,
+                 item_node: Optional[ItemNode] = None):
         super().__init__()
         self.game = game  # 博弈游戏
         self.copied_game = deepcopy(self.game)  # 游戏副本
 
         self.transposition_table = dict() if allow_transpositions is True else None  # {(player, state): Node} 缓存表
-        self.root = item_node # 根节点
+        self.root = item_node  # 根节点
         if self.transposition_table is not None:
             self.transposition_table[(self.game.current_player(), str(self.game.get_state()))] = self.root  # 缓存根节点
         self.training = training  # 是否训练模式
@@ -39,7 +40,7 @@ class MCTSTree(MCTS):
         # 对于一个节点，如果它没有孩子节点，我们需要扩展它，即添加它的子节点。我们从当前节点的状态开始，对所有可能的动作进行扩展，并将它们添加到它的孩子节点中。
         # 到达叶子节点后，如果还没有到达终止状态（比如五子棋的五子连星），那么我们就要对这个节点进行扩展，扩展出一个或多个节点（也就是进行一个可能的action然后进入下一个状态）。
         if self.copied_game.has_outcome() is True:  # 如果游戏已经结束，则不需要扩展
-            path[-1].has_outcome = True   # 标记结果
+            path[-1].has_outcome = True  # 标记结果
             return path
 
         if path[-1].is_expanded is False:  # 如果节点没有扩展过，则扩展
@@ -48,7 +49,7 @@ class MCTSTree(MCTS):
                 expanded_game.take_action(action)  # 应用动作到游戏
                 path[-1].add_child(expanded_game.current_player(), str(expanded_game.get_state()), action)  # 添加子节点
 
-            assert len(path[-1].children) > 0 # 至少有一个子节点
+            assert len(path[-1].children) > 0  # 至少有一个子节点
 
             path[-1].is_expanded = True  # 标记扩展
             action = path[-1].choose_random_action()  # 随机选择一个动作
@@ -64,8 +65,8 @@ class MCTSTree(MCTS):
         while self.copied_game.has_outcome() is False:  # 直到游戏结束
             action = random.choice(self.copied_game.possible_actions())  # 随机选择一个动作
             self.copied_game.take_action(action)  # 应用动作到游戏
-            path[-1].add_child(self.copied_game.current_player(), str(self.copied_game.get_state()), action) # 添加子节点
-            path.append(path[-1].children[action]) # 向下搜索
+            path[-1].add_child(self.copied_game.current_player(), str(self.copied_game.get_state()), action)  # 添加子节点
+            path.append(path[-1].children[action])  # 向下搜索
         return path
 
     def backpropagation(self, path: List[ItemNode]) -> None:
@@ -78,7 +79,7 @@ class MCTSTree(MCTS):
             path[0].n += 1  # 遍历次数加1
             for i in range(1, len(path)):  # 向上回溯
                 if number_of_winners > 0:  # 如果有胜利者
-                    path[i].w += (path[i - 1].player in winners) / number_of_winners  # 胜率加1
+                    path[i].w += (path[i - 1].item in winners) / number_of_winners  # 胜率加1
                 path[i].n += 1  # 遍历次数加1
             path[-1].has_outcome = True  # 标记结果
 

@@ -4,10 +4,7 @@ import numpy as np
 
 from py3dbp.spec.bin import Bin
 from py3dbp.spec.item import Item
-from py3dbp.utils.constants import (
-    DEFAULT_NUMBER_OF_DECIMALS,
-    Axis,
-)
+from utils.constants import Axis
 
 
 class Packer:

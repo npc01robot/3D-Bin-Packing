@@ -2,6 +2,8 @@ from typing import List, Any, Dict, Tuple
 
 from DL3Dbp.MCTS.game import Game
 from DL3Dbp.MCTS.item_node import ItemNode
+from utils.auxiliary_methods import intersect
+from utils.constants import RotationType, Axis
 
 
 class BinPackingGame(Game):
@@ -38,22 +40,73 @@ class BinPackingGame(Game):
         """
         本回合采取行动的玩家编号
         """
-        raise NotImplementedError
+        return self.current_item_index
 
-    def possible_actions(self) -> list[tuple[int, int, int]]:
+    def possible_actions(self) -> list[tuple[tuple[int, int, int], int, int]]:
         """
         当前玩家本回合可以采取的可能行动列表
 
-        axis * rotation 一共是18种可能的动作，
+        axis * rotation * position
         需要考虑是否放的下，比如最大支撑面积等
+        action = (摆放位置)，(放置方向)，(旋转角度)
         """
+        # TODO: 实现
+        # 1、是否相交
+        # 2、是否放的下
+        self.current_item_index += 1
         actions = []
-        current_item = self.items[self.current_item_index]
-        for x in range(self.container.width - current_item.width + 1):
-            for y in range(self.container.height - current_item.height + 1):
-                for z in range(self.container.depth - current_item.depth + 1):
-                    if self.is_valid_placement(current_item, x, y, z):
-                        actions.append((x, y, z))
+        item = self.items[self.current_item_index]
+
+        rotations = RotationType.ALL if item.updown else RotationType.Notupdown
+        for ib in self.container:
+            fit = True
+            pivot = ib.pivot
+            # 判断是否相交
+            for current_item_in_bin in self.container:
+                if intersect(current_item_in_bin, item):
+                    fit = False
+                    break
+            if not fit:
+                continue
+            # TODO 收敛
+            # 列出可能项
+            for axis in Axis.ALL:
+                for rotation_idx in rotations:
+                    [x, y, z] = [float(pivot[0]), float(pivot[1]), float(pivot[2])]
+                    item.rotation_type = rotation_idx
+                    dimension = item.get_dimension()
+                    [w, h, d] = dimension
+
+                    # width = max(item.width, pivot[0] + w)
+                    # height = max(item.height, pivot[1] + h)
+                    # depth = max(item.depth, pivot[2] + d)
+                    # # 判断是否超过最大尺寸
+                    # # 宽高不超过深度（长度）
+                    # if (
+                    #         float(width) > max_width
+                    #         or float(height) > max_height
+                    #         or float(depth) > max_depth
+                    # ):
+                    #     continue
+
+                    # 获取坐标
+                    y = self.checkHeight(
+                        [x, x + float(w), y, y + float(h), z, z + float(d)], y + float(h)
+                    )
+                    x = self.checkWidth(
+                        [x, x + float(w), y, y + float(h), z, z + float(d)], x + float(w)
+                    )
+                    z = self.checkDepth(
+                        [x, x + float(w), y, y + float(h), z, z + float(d)], z + float(d)
+                    )
+                    # 放置位置
+                    position = (x, y, z)
+                    # 放置方向
+                    direction = axis
+                    # 旋转角度
+                    rotation = rotation_idx
+                    # 加入列表
+                    actions.append((position, direction, rotation))
         return actions
 
     def take_action(self, action: int) -> None:
@@ -66,7 +119,9 @@ class BinPackingGame(Game):
         """
         是否结束
         """
-        raise NotImplementedError
+        if self.current_item_index >= len(self.items):
+            return True
+        return False
 
     def winner(self) -> List[int]:
         """
@@ -77,3 +132,72 @@ class BinPackingGame(Game):
         如果至少有一名玩家获胜，则列出获胜者名单
         """
         raise NotImplementedError
+
+
+
+    def checkDepth(self, unfix_point, length=0):
+        """fix item position z"""
+        length = float(length) if length else float(self.depth)
+        z_ = [[0, 0], [length, length]]
+        for j in self.fit_items:
+            # creat x set
+            x_bottom = set([i for i in range(int(j[0]), int(j[1]))])
+            x_top = set([i for i in range(int(unfix_point[0]), int(unfix_point[1]))])
+            # creat y set
+            y_bottom = set([i for i in range(int(j[2]), int(j[3]))])
+            y_top = set([i for i in range(int(unfix_point[2]), int(unfix_point[3]))])
+            # find intersection on x set and y set.
+            if len(x_bottom & x_top) != 0 and len(y_bottom & y_top) != 0:
+                z_.append([float(j[4]), float(j[5])])
+        top_depth = unfix_point[5] - unfix_point[4]
+        # find diff set on z_.
+        z_ = sorted(z_, key=lambda z_: z_[1])
+        for j in range(len(z_) - 1):
+            if z_[j + 1][0] - z_[j][1] >= top_depth:
+                return z_[j][1]
+        return unfix_point[4]
+
+    def checkWidth(self, unfix_point, length=0):
+        """fix item position x"""
+        length = float(length) if length else float(self.width)
+        x_ = [[0, 0], [length, length]]
+        for j in self.fit_items:
+            # creat z set
+            z_bottom = set([i for i in range(int(j[4]), int(j[5]))])
+            z_top = set([i for i in range(int(unfix_point[4]), int(unfix_point[5]))])
+            # creat y set
+            y_bottom = set([i for i in range(int(j[2]), int(j[3]))])
+            y_top = set([i for i in range(int(unfix_point[2]), int(unfix_point[3]))])
+            # find intersection on z set and y set.
+            if len(z_bottom & z_top) != 0 and len(y_bottom & y_top) != 0:
+                x_.append([float(j[0]), float(j[1])])
+        top_width = unfix_point[1] - unfix_point[0]
+        # find diff set on x_bottom and x_top.
+        x_ = sorted(x_, key=lambda x_: x_[1])
+        for j in range(len(x_) - 1):
+            if x_[j + 1][0] - x_[j][1] >= top_width:
+                return x_[j][1]
+        return unfix_point[0]
+
+    def checkHeight(self, unfix_point, length=0):
+        """fix item position y"""
+        length = float(length) if length else float(self.width)
+        y_ = [[0, 0], [length, length]]
+        for j in self.fit_items:
+            # creat x set
+            x_bottom = set([i for i in range(int(j[0]), int(j[1]))])
+            x_top = set([i for i in range(int(unfix_point[0]), int(unfix_point[1]))])
+            # creat z set
+            z_bottom = set([i for i in range(int(j[4]), int(j[5]))])
+            z_top = set([i for i in range(int(unfix_point[4]), int(unfix_point[5]))])
+            # find intersection on x set and z set.
+            if len(x_bottom & x_top) != 0 and len(z_bottom & z_top) != 0:
+                y_.append([float(j[2]), float(j[3])])
+        top_height = unfix_point[3] - unfix_point[2]
+        # find diff set on y_bottom and y_top.
+        y_ = sorted(y_, key=lambda y_: y_[1])
+        for j in range(len(y_) - 1):
+            if y_[j + 1][0] - y_[j][1] >= top_height:
+                return y_[j][1]
+
+        return unfix_point[2]

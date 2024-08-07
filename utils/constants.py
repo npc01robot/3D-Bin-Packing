@@ -10,6 +10,7 @@ class RotationType:
     ALL = [RT_WHD, RT_HWD, RT_HDW, RT_DHW, RT_DWH, RT_WDH]
     Notupdown = [RT_WHD, RT_HWD]
 
+
 # 放置方向，三个方向
 class Axis:
     WIDTH = 0
@@ -17,6 +18,7 @@ class Axis:
     DEPTH = 2
 
     ALL = [WIDTH, HEIGHT, DEPTH]
+
 
 # 小数位数
 DEFAULT_NUMBER_OF_DECIMALS = 0

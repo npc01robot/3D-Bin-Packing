@@ -57,6 +57,7 @@ class ItemNode(Node):
 
         # 物品位置 (x,y,z)
         self.position = START_POSITION
+        self.pivot = [0, 0, 0]  # 物品边界坐标
         # Decimals of the dimensions
         self.number_of_decimals = DEFAULT_NUMBER_OF_DECIMALS
         self.c = 0.75

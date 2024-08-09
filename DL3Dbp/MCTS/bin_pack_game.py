@@ -46,7 +46,7 @@ class BinPackingGame(Game):
         """
         return self.current_item_index
 
-    def possible_actions(self) -> list[tuple[tuple[int, int, int], int, int]]:
+    def possible_actions(self) -> list:
         """
         当前玩家本回合可以采取的可能行动列表
 
@@ -71,8 +71,12 @@ class BinPackingGame(Game):
             positions[:, -1] = item_np[:, 0]
             results.append(positions)
         result_array = np.array(results).reshape(-1, self.container.shape[1])  # 解的集合
-        can_place(self.container, result_array)
-
+        actions = []
+        is_can_place = can_place(self.container, result_array)
+        for i in range(len(is_can_place)):
+            if is_can_place[i]:
+                actions.append((result_array[i]))
+        actions = np.array(actions).reshape(-1, self.container.shape[1])  # 解的集合
         return actions
 
     def take_action(self, action: int) -> None:

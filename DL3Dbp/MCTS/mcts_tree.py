@@ -6,13 +6,13 @@ from copy import deepcopy
 from tqdm.auto import tqdm
 from typing import List, Union, Optional
 
-from DL3Dbp.MCTS.game import Game
+from DL3Dbp.MCTS.bin_pack_game import BinPackingGame
 from DL3Dbp.MCTS.item_node import ItemNode
 from DL3Dbp.MCTS.mcts import MCTS
 
 
 class MCTSTree(MCTS):
-    def __init__(self, game: Game, allow_transpositions: bool = True, training: bool = True,
+    def __init__(self, game: BinPackingGame, allow_transpositions: bool = True, training: bool = True,
                  item_node: Optional[ItemNode] = None):
         super().__init__()
         self.game = game  # 博弈游戏

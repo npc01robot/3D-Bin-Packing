@@ -1,17 +1,21 @@
 from typing import List, Any, Dict, Tuple
 
+import numpy as np
+
 from DL3Dbp.MCTS.game import Game
 from DL3Dbp.MCTS.item_node import ItemNode
-from utils.auxiliary_methods import intersect
+from utils.auxiliary_methods import intersect, can_place
 from utils.constants import RotationType, Axis
 
 
 class BinPackingGame(Game):
     def __init__(self, items: List[ItemNode]):
         super().__init__()
-        self.container = []
+        self.container = np.array([])
         self.items = items
         self.current_item_index = 0
+        self.fit_items = []
+        self.unfit_items = []
 
     def render(self) -> None:
         """
@@ -56,57 +60,19 @@ class BinPackingGame(Game):
         self.current_item_index += 1
         actions = []
         item = self.items[self.current_item_index]
+        item_np = item.get_dimension(True)
+        results = []
+        for i in Axis.ALL:  # axis x,y,z 轴扩展
+            positions = self.container.copy()  # 复制 containers
+            positions[:, i] += positions[:, i + 6]
+            positions[:, 3:6] = positions[:, :3] + item_np[:, 1:]
+            positions[:, 6:9] = item_np[:, 1:]
+            positions[:, -2] = i
+            positions[:, -1] = item_np[:, 0]
+            results.append(positions)
+        result_array = np.array(results).reshape(-1, self.container.shape[1])  # 解的集合
+        can_place(self.container, result_array)
 
-        rotations = RotationType.ALL if item.updown else RotationType.Notupdown
-        for ib in self.container:
-            fit = True
-            pivot = ib.pivot
-            # 判断是否相交
-            for current_item_in_bin in self.container:
-                if intersect(current_item_in_bin, item):
-                    fit = False
-                    break
-            if not fit:
-                continue
-            # TODO 收敛
-            # 列出可能项
-            for axis in Axis.ALL:
-                for rotation_idx in rotations:
-                    [x, y, z] = [float(pivot[0]), float(pivot[1]), float(pivot[2])]
-                    item.rotation_type = rotation_idx
-                    dimension = item.get_dimension()
-                    [w, h, d] = dimension
-
-                    # width = max(item.width, pivot[0] + w)
-                    # height = max(item.height, pivot[1] + h)
-                    # depth = max(item.depth, pivot[2] + d)
-                    # # 判断是否超过最大尺寸
-                    # # 宽高不超过深度（长度）
-                    # if (
-                    #         float(width) > max_width
-                    #         or float(height) > max_height
-                    #         or float(depth) > max_depth
-                    # ):
-                    #     continue
-
-                    # 获取坐标
-                    y = self.checkHeight(
-                        [x, x + float(w), y, y + float(h), z, z + float(d)], y + float(h)
-                    )
-                    x = self.checkWidth(
-                        [x, x + float(w), y, y + float(h), z, z + float(d)], x + float(w)
-                    )
-                    z = self.checkDepth(
-                        [x, x + float(w), y, y + float(h), z, z + float(d)], z + float(d)
-                    )
-                    # 放置位置
-                    position = (x, y, z)
-                    # 放置方向
-                    direction = axis
-                    # 旋转角度
-                    rotation = rotation_idx
-                    # 加入列表
-                    actions.append((position, direction, rotation))
         return actions
 
     def take_action(self, action: int) -> None:

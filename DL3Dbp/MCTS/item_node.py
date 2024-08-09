@@ -2,6 +2,8 @@ import math
 import random
 from typing import Optional, Dict, Any
 
+import numpy as np
+
 from DL3Dbp.MCTS.node import Node
 from utils.auxiliary_methods import set2Decimal
 from utils.constants import DEFAULT_NUMBER_OF_DECIMALS, START_POSITION, RotationType
@@ -57,7 +59,7 @@ class ItemNode(Node):
 
         # 物品位置 (x,y,z)
         self.position = START_POSITION
-        self.pivot = [0, 0, 0]  # 物品边界坐标
+        self.pivot = [0, 0, 0, 0, 0, 0]  # 物品边界坐标
         # Decimals of the dimensions
         self.number_of_decimals = DEFAULT_NUMBER_OF_DECIMALS
         self.c = 0.75
@@ -103,8 +105,17 @@ class ItemNode(Node):
 
         return set2Decimal(a[0] * a[1], self.number_of_decimals)
 
-    def get_dimension(self):
+    def get_dimension(self, all: bool = False):
         """rotation type"""
+        if all:
+            return np.array([
+                [RotationType.RT_WHD, self.width, self.height, self.depth],
+                [RotationType.RT_HWD, self.height, self.width, self.depth],
+                [RotationType.RT_HDW, self.height, self.depth, self.width],
+                [RotationType.RT_DHW, self.depth, self.height, self.width],
+                [RotationType.RT_DWH, self.depth, self.width, self.height],
+                [RotationType.RT_WDH, self.width, self.depth, self.height],
+            ])
         if self.rotation_type == RotationType.RT_WHD:
             dimension = [self.width, self.height, self.depth]
         elif self.rotation_type == RotationType.RT_HWD:
